@@ -1,3 +1,5 @@
+**Name :** Ryan Hulton
+
 # Prey Predator
 
 Add this folder in Unity Hub. In Unity, open `Assets/Scenes/SampleScene.unity` and press **Play**.
