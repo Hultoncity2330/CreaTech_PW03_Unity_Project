@@ -1,35 +1,89 @@
 using UnityEngine;
 
+public enum SheepState { Idle, Flee, Dead }
+
+
 public class SheepBehaviour : AgentBehaviour
 {
     [Header("Sheep Settings")]
-    [SerializeField] private float fleeDistance = 8f;
+    [SerializeField] private float fleeDistance = 10f;
+    [SerializeField] private float fleeEnergyLoss = 10f;
+    [SerializeField] private float energyRecovery = 10f;
 
-    private enum SheepState
+    private SheepState currentState = SheepState.Idle;
+    private AgentBehaviour closestWolf;
+
+    public override SimulationType GetSimType()
     {
-        Explore,
-        Flee
+        return SimulationType.Sheep;
     }
 
-    private SheepState currentState = SheepState.Explore;
+
+//------------------------------//------------------------------//
+
 
     protected override void UpdateBehaviour()
     {
-        AgentBehaviour wolf = FindClosestAgent(SimulationType.Wolf);
+        // 1. Perception
+        closestWolf = FindClosestAgent(SimulationType.Wolf);
 
-        if (wolf != null && Vector3.Distance(transform.position, wolf.transform.position) <= fleeDistance)
+        // 2. State selection
+        PickState();
+
+        // 3. State execution
+        switch (currentState)
         {
-            currentState = SheepState.Flee;
+            case SheepState.Idle:
+                DoIdle();
+                break;
 
-            Vector3 direction = transform.position - wolf.transform.position;
-            SetDirection(direction);
+            case SheepState.Flee:
+                UseEnergy(fleeEnergyLoss);
+
+                if (IsExhausted)
+                {
+                    currentState = SheepState.Idle;
+                    DoIdle();
+                }
+                else
+                {
+                    SetDirection(transform.position - closestWolf.transform.position);
+                    Move(2f);
+                }
+                break;
+
+            case SheepState.Dead:
+                break;
         }
-        else
+    }
+
+
+//------------------------------//------------------------------//
+
+
+    private void PickState()
+    {
+        currentState = SheepState.Idle;
+
+        if (!IsExhausted && closestWolf != null)
         {
-            currentState = SheepState.Explore;
-            Wander();
-        }
+            float distance = (transform.position - closestWolf.transform.position).sqrMagnitude;
 
+            if (distance <= fleeDistance * fleeDistance)
+                currentState = SheepState.Flee;
+        }
+    }
+
+    private void DoIdle()
+    {
+        RecoverEnergy(energyRecovery);
+        Wander();
         Move();
     }
+
+    protected override void OnDeath()
+    {
+        currentState = SheepState.Dead;
+    }
 }
+

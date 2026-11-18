@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4545080497123804330}
   - component: {fileID: 4046113278144752437}
+  - component: {fileID: 4170687707952216911}
   m_Layer: 0
   m_Name: Wolf
   m_TagString: Untagged
@@ -45,10 +46,46 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b97df57d937a77746a2096e9113fb9ca, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::WolfBehaviour
-  speed: 2.5
+  speed: 1
   rotationSpeed: 120
-  visionRadius: 10
-  type: 1
+  gravity: -9.81
+  visionRadius: 30
+  hungerLossRate: 2
+  deathVisual: {fileID: 0}
+  fallDuration: 0.5
+  sinkDuration: 2
+  sinkDistance: 3
+  chaseEnergyLoss: 15
+  energyRecovery: 10
+  hungerThreshold: 50
+  attackDuration: 1
+  eatDuration: 2
+  hungerGain: 50
+--- !u!143 &4170687707952216911
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7041476065609325352}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 2
+  m_Radius: 0.5
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.08
+  m_MinMoveDistance: 0.001
+  m_Center: {x: 0, y: 1, z: 0}
 --- !u!1001 &2053735843635091908
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -31,8 +31,9 @@ public class FreeCameraHUD : MonoBehaviour
         if (headingStyle == null)
             CreateStyles();
 
-        float width = Mathf.Min(392f, Screen.width - 24f);
-        Rect panel = new Rect(12f, 12f, width, showHelp ? 122f : 46f);
+        float width = Mathf.Min(370f, Screen.width - 24f);
+        float panelX = (Screen.width - width) / 2f;
+        Rect panel = new Rect(panelX, 12f, width, showHelp ? 145f : 46f);
         Color previousColor = GUI.color;
 
         GUI.color = new Color(0.08f, 0.11f, 0.13f, 0.92f);
@@ -54,6 +55,8 @@ public class FreeCameraHUD : MonoBehaviour
                 "Espace / Ctrl   Monter / descendre     Maj   Accélérer", textStyle);
             GUI.Label(new Rect(x, panel.y + 88f, contentWidth, 22f),
                 "Souris   Regarder     Échap   Libérer     F1   Aide", textStyle);
+            GUI.Label(new Rect(x, panel.y + 113f, contentWidth, 22f),
+                "Afficher/Masquer les volets de stats : Tab", textStyle);
         }
 
         GUI.color = previousColor;
@@ -61,9 +64,9 @@ public class FreeCameraHUD : MonoBehaviour
 
     private void CreateStyles()
     {
-        headingStyle = new GUIStyle(GUI.skin.label) { fontSize = 17, fontStyle = FontStyle.Bold };
+        headingStyle = new GUIStyle(GUI.skin.label) { fontSize = 16, fontStyle = FontStyle.Bold };
         headingStyle.normal.textColor = Color.white;
-        textStyle = new GUIStyle(GUI.skin.label) { fontSize = 13 };
+        textStyle = new GUIStyle(GUI.skin.label) { fontSize = 12 };
         textStyle.normal.textColor = new Color(0.86f, 0.9f, 0.89f);
     }
 }
