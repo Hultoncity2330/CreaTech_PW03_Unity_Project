@@ -988,9 +988,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SimulationGenerator
   sheepPrefab: {fileID: 9015840134179744150, guid: 9062dd798f1d13446bda0fd411bb459d, type: 3}
   wolfPrefab: {fileID: 7041476065609325352, guid: bc97ede49e9f2674eb677eca33096517, type: 3}
-  sheepCount: 20
-  wolfCount: 5
-  spawnRange: 50
+  sheepCount: 2
+  wolfCount: 2
+  spawnRange: 30
 --- !u!4 &1909019703
 Transform:
   m_ObjectHideFlags: 0

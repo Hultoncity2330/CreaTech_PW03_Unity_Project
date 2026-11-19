@@ -1,6 +1,6 @@
-# Predator–Prey Ecosystem — Computer Science Workshop 3
+**Name :** Ryan Hulton
 
-**Contributor Name :** Ryan Hulton
+# Predator–Prey Ecosystem — Computer Science Workshop 3
 
 **Project version:** v1.4 · **Unity Editor:** Unity 6.6 (`6000.6.9f1`) · **Programming language:** C#
 
@@ -101,6 +101,14 @@ Double-click `Assets/Scenes/SampleScene.unity` in the **Project** window. The sc
 
 **Important:** Inspector values changed while Play Mode is running are usually temporary and may revert when Play Mode ends. To change default simulation settings permanently, stop Play, edit the scene or prefab, and save it.
 
+### Video demonstration — two sheep and two wolves
+
+The following recording shows a short run of the ecosystem with **two sheep and two wolves**, illustrating the autonomous simulation in action:
+
+[**Watch the 47-second simulation demonstration (MP4)**](Media/Demo_2_sheep_2_wolves.mp4)
+
+The recording is stored in the repository's `Media/` folder and can be opened in your browser or downloaded from GitHub.
+
 ## 4. Complete controls and keyboard shortcuts
 
 These controls are based on `FreeCamera.cs`, `FreeCameraHUD.cs`, `HUDToggle.cs`, `PopulationPlot.cs`, and `SimulationSpeed.cs`.
@@ -200,6 +208,12 @@ For example, the **180-second breeding cooldown** takes approximately:
 The panel list refreshes periodically using `Refresh Interval` (normally 0.5 seconds); each row updates its percentage and breeding countdown as the simulation runs. Panels are intentionally **single-column, without automatic scrolling**. With large populations, rows can extend beyond the bottom of the screen.
 
 Press **Tab** to hide both panels, or press it again to show them.
+
+**In-game example — sheep fleeing from wolves:**
+
+![Sheep fleeing as wolves pursue them; the HUD and population monitoring graph are visible.](Media/flee_chase.png)
+
+*The scene shows sheep in motion, nearby wolves, individual energy/food bars, breeding status, and the live population chart.*
 
 ### 5.2 Population graph — F2
 
@@ -327,6 +341,12 @@ The nearest **eligible** animal of the same species is preferred when selecting 
 **Interrupted pair:** A higher-priority flee/chase action, death, predation, leaving the allowed area, or food dropping below 20% may interrupt a pair. In that case, the hearts disappear, no offspring is created, **no breeding cooldown begins**, and the 20-point energy cost is not charged.
 
 **Newborn animals:** Offspring use the same species prefab as their parents. They start with the prefab's usual initial needs (100% energy and food) and do **not automatically inherit their parents' cooldown**.
+
+**In-game example — sheep reproduction:**
+
+![Two sheep facing each other with pink hearts visible above their heads during reproduction.](Media/sheep_reproduction.png)
+
+*Both sheep display their pink hearts during courtship. The HUD shows breeding availability/cooldowns, while the population graph records changes over time.*
 
 ### 7.3 Breeding timing and speed multipliers
 
