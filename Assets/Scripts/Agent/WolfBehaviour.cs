@@ -6,7 +6,7 @@ public enum WolfState { Idle, Chase, Attack, Eat, Dead }
 public class WolfBehaviour : AgentBehaviour
 {
     [Header("Wolf Settings")]
-    [SerializeField] private float chaseEnergyLoss = 15f;
+    [SerializeField] private float chaseEnergyLoss = 10f;
     [SerializeField] private float energyRecovery = 10f;
     [SerializeField] private float hungerThreshold = 50f;
 
@@ -72,7 +72,7 @@ public class WolfBehaviour : AgentBehaviour
                 else
                 {
                     SetDirection(closestSheep.transform.position - transform.position);
-                    Move(4f);
+                    Move(5f);
                 }
                 break;
 

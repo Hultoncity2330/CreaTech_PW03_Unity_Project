@@ -8,14 +8,21 @@ public enum SimulationType { Sheep, Wolf }
 public abstract class AgentBehaviour : MonoBehaviour
 {
     [Header("Movement")]
-    [SerializeField] private float speed = 1f;            // m/s
-    [SerializeField] private float rotationSpeed = 120f;  // deg/s
+    [SerializeField] private float speed = 1f;              // m/s
+    [SerializeField] private float rotationSpeed = 120f;    // deg/s
 
     [Header("Gravity")]
     [SerializeField] private float gravity = -9.81f;
 
     [Header("Perception")]
-    [SerializeField] protected float visionRadius = 30f;
+    [SerializeField] private LayerMask animalMask = ~0;
+    [SerializeField] protected float visionRadius = 50f;
+    [SerializeField] private float minSearchInterval = 0.4f;
+    [SerializeField] private float maxSearchInterval = 0.6f;
+
+    [Header("Boundaries")]
+    [SerializeField] private Vector2 areaCenter = Vector2.zero;
+    [SerializeField] private float areaHalfSize = 60f;
 
     [Header("Needs")]
     [SerializeField] protected float hungerLossRate = 1f;   // %/s
@@ -26,6 +33,12 @@ public abstract class AgentBehaviour : MonoBehaviour
     [SerializeField] private float sinkDuration = 2f;
     [SerializeField] private float sinkDistance = 3f;
 
+
+    // Reused by OverlapSphereNonAlloc: no new collider array each frame.
+    private readonly Collider[] animalColliders = new Collider[256];
+    private AgentBehaviour cachedClosestSheep;
+    private AgentBehaviour cachedClosestWolf;
+    private float nextAnimalSearchTime;
 
     private float nextTurnTime;
     private Quaternion targetRot;
@@ -58,6 +71,7 @@ public abstract class AgentBehaviour : MonoBehaviour
         characterController = GetComponent<CharacterController>();
         targetRot = transform.rotation;
         nextTurnTime = Time.time + Random.Range(5f, 9f);
+        nextAnimalSearchTime = Time.time + Random.Range(0f, 0.2f);
         hunger = 100f;
         energy = 100f;
     }
@@ -74,6 +88,11 @@ public abstract class AgentBehaviour : MonoBehaviour
             {
                 movement = Vector3.zero;
                 UpdateBehaviour();
+
+                // Outside the square: steer back toward its centre.
+                if (IsOutsideArea())
+                    ReturnToCenter();
+
                 ApplyMovement();
             }
         }
@@ -120,6 +139,26 @@ public abstract class AgentBehaviour : MonoBehaviour
     }
 
 
+    /// <summary>Checks whether the agent has crossed the square boundary on X or Z.</summary>
+    private bool IsOutsideArea()
+    {
+        Vector3 position = transform.position;
+
+        return Mathf.Abs(position.x - areaCenter.x) > areaHalfSize
+            || Mathf.Abs(position.z - areaCenter.y) > areaHalfSize;
+    }
+
+
+    /// <summary>Steers an agent outside the area toward its centre.</summary>
+    private void ReturnToCenter()
+    {
+        Vector3 center = new Vector3(areaCenter.x, transform.position.y, areaCenter.y);
+
+        SetDirection(center - transform.position);
+        Move();
+    }
+
+
     private void ApplyMovement()
     {
         if (characterController.isGrounded && verticalSpeed < 0f)
@@ -138,6 +177,7 @@ public abstract class AgentBehaviour : MonoBehaviour
         {
             targetRot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
             nextTurnTime = Time.time + Random.Range(5f, 9f);
+        nextAnimalSearchTime = Time.time + Random.Range(0f, 0.2f);
         }
     }
 
@@ -151,34 +191,58 @@ public abstract class AgentBehaviour : MonoBehaviour
     }
 
 
+    /// <summary>
+    /// Returns the nearest living agent of a requested type.
+    /// One masked NonAlloc physics query refreshes both species caches every 0.4–0.6 s.
+    /// </summary>
     protected AgentBehaviour FindClosestAgent(SimulationType targetType)
     {
-        Collider[] colliders = Physics.OverlapSphere(transform.position, visionRadius);
-        AgentBehaviour closestAgent = null;
-        float minDistance = float.MaxValue;
-
-        foreach (Collider collider in colliders)
+        if (Time.time >= nextAnimalSearchTime)
         {
-            AgentBehaviour agent = collider.GetComponentInParent<AgentBehaviour>();
+            cachedClosestSheep = null;
+            cachedClosestWolf = null;
+            float sheepDistance = float.MaxValue;
+            float wolfDistance = float.MaxValue;
 
-            if (agent != null && agent != this && !agent.IsDead && !agent.IsBeingEaten && agent.GetSimType() == targetType)
+            int count = Physics.OverlapSphereNonAlloc(
+                transform.position,
+                visionRadius,
+                animalColliders,
+                animalMask,
+                QueryTriggerInteraction.Collide
+            );
+
+            for (int i = 0; i < count; i++)
             {
-                float distance = (transform.position - agent.transform.position).sqrMagnitude;
+                AgentBehaviour agent = animalColliders[i].GetComponentInParent<AgentBehaviour>();
 
-                if (distance < minDistance)
+                if (agent != null && agent != this && !agent.IsDead && !agent.IsBeingEaten)
                 {
-                    minDistance = distance;
-                    closestAgent = agent;
+                    float distance = (transform.position - agent.transform.position).sqrMagnitude;
+
+                    if (agent.GetSimType() == SimulationType.Sheep && distance < sheepDistance)
+                    {
+                        sheepDistance = distance;
+                        cachedClosestSheep = agent;
+                    }
+                    else if (agent.GetSimType() == SimulationType.Wolf && distance < wolfDistance)
+                    {
+                        wolfDistance = distance;
+                        cachedClosestWolf = agent;
+                    }
                 }
             }
+
+            nextAnimalSearchTime = Time.time + Random.Range(minSearchInterval, maxSearchInterval);
         }
 
-        if (closestAgent != null && Time.frameCount % 60 == 0)
-        {
-            Debug.Log($"{GetSimType()} detected {closestAgent.GetSimType()}: {closestAgent.name}");
-        }
+        AgentBehaviour closest = targetType == SimulationType.Sheep
+            ? cachedClosestSheep : cachedClosestWolf;
 
-        return closestAgent;
+        if (closest != null && (closest.IsDead || closest.IsBeingEaten))
+            closest = null;
+
+        return closest;
     }
 
 

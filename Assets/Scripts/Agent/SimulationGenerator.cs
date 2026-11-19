@@ -5,8 +5,8 @@ public class SimulationGenerator : MonoBehaviour
     [SerializeField] private GameObject sheepPrefab;
     [SerializeField] private GameObject wolfPrefab;
 
-    [SerializeField] private int sheepCount = 10;
-    [SerializeField] private int wolfCount = 3;
+    [SerializeField] private int sheepCount = 100;
+    [SerializeField] private int wolfCount = 10;
 
     [SerializeField] private float spawnRange = 30f;
 

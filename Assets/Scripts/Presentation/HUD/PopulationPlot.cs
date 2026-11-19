@@ -6,6 +6,9 @@ public class PopulationPlot : MonoBehaviour
 {
     [SerializeField, Min(5f)] private float windowSeconds = 90f;
     [SerializeField] private bool visible = true;
+    [SerializeField, Min(0.1f)] private float sampleInterval = 1f;
+
+    private float nextSampleTime;
 
     private static readonly Color SheepColor = new Color(0.58f, 0.79f, 1f);
     private static readonly Color WolfColor = new Color(1f, 0.68f, 0.47f);
@@ -51,11 +54,47 @@ public class PopulationPlot : MonoBehaviour
 
     private void Update()
     {
+        // Record the three populations once per interval, independently of F2 visibility.
+        if (Time.time >= nextSampleTime)
+        {
+            CountPopulations();
+            nextSampleTime = Time.time + Mathf.Max(0.1f, sampleInterval);
+        }
+
         Keyboard keyboard = Keyboard.current;
         if (keyboard != null && keyboard.f2Key.wasPressedThisFrame)
             visible = !visible;
 
         TrimHistory(Time.timeAsDouble - windowSeconds);
+    }
+
+    /// <summary>Counts living animals and unconsumed grass, then stores a sample.</summary>
+    private void CountPopulations()
+    {
+        int sheep = 0;
+        int wolves = 0;
+        int grass = 0;
+
+        AgentBehaviour[] agents = FindObjectsByType<AgentBehaviour>();
+        foreach (AgentBehaviour agent in agents)
+        {
+            if (!agent.IsDead)
+            {
+                if (agent.GetSimType() == SimulationType.Sheep)
+                    sheep++;
+                else if (agent.GetSimType() == SimulationType.Wolf)
+                    wolves++;
+            }
+        }
+
+        GrassBehaviour[] grassTufts = FindObjectsByType<GrassBehaviour>();
+        foreach (GrassBehaviour tuft in grassTufts)
+        {
+            if (!tuft.IsConsumed)
+                grass++;
+        }
+
+        RecordPopulation(sheep, wolves, grass);
     }
 
     private void TrimHistory(double start)
@@ -74,53 +113,66 @@ public class PopulationPlot : MonoBehaviour
         if (Event.current.type != EventType.Repaint)
             return;
 
-        if (titleStyle == null)
+        Color previousGuiColor = GUI.color;
+        Color previousContentColor = GUI.contentColor;
+        GUI.color = Color.white;
+        GUI.contentColor = Color.white;
+
+        try
         {
-            titleStyle = MakeStyle(15, Color.white, FontStyle.Bold);
-            labelStyle = MakeStyle(12, Color.white);
-            axisStyle = MakeStyle(11, MutedColor);
-            grassAxisStyle = MakeStyle(11, GrassColor);
+            if (titleStyle == null)
+            {
+                titleStyle = MakeStyle(15, Color.white, FontStyle.Bold);
+                labelStyle = MakeStyle(12, Color.white);
+                axisStyle = MakeStyle(11, Color.white);
+                grassAxisStyle = MakeStyle(11, Color.white);
+            }
+
+            string speedLabel = $"×{Time.timeScale:0.##}";
+
+            if (!visible)
+            {
+                Rect badge = new Rect(Screen.width - 182f, Screen.height - 42f, 170f, 30f);
+                Fill(badge, new Color(0.08f, 0.11f, 0.13f, 0.94f));
+                WhiteLabel(new Rect(badge.x + 9f, badge.y + 4f, 154f, 22f),
+                    $"F2  ·  Populations     {speedLabel}", labelStyle);
+                return;
+            }
+
+            float width = Mathf.Min(450f, Screen.width - 24f);
+            float height = Mathf.Min(238f, Screen.height - 24f);
+            if (width < 220f || height < 120f)
+                return;
+
+            Rect panel = new Rect(Screen.width - width - 12f, Screen.height - height - 12f, width, height);
+            Rect plot = new Rect(panel.x + 48f, panel.y + 60f, panel.width - 96f, panel.height - 88f);
+            Fill(panel, new Color(0.08f, 0.11f, 0.13f, 0.96f));
+            WhiteLabel(new Rect(panel.x + 14f, panel.y + 8f, 155f, 24f), $"Populations  ·  {speedLabel}", titleStyle);
+            WhiteLabel(new Rect(panel.xMax - 96f, panel.y + 10f, 85f, 22f), "F2  ·  Masquer", axisStyle);
+
+            double now = Time.timeAsDouble;
+            double start = now - windowSeconds;
+            bool hasData = samples.Count > 0 && samples[samples.Count - 1].Time >= start;
+            Sample latest = hasData ? samples[samples.Count - 1] : default;
+            DrawLegend(panel, hasData, latest);
+
+            (long animalCeiling, long grassCeiling) = hasData ? GetAxisCeilings() : (4L, 4L);
+            DrawGrid(plot, animalCeiling, grassCeiling, hasData);
+
+            if (!hasData)
+            {
+                string message = samples.Count == 0 ? "En attente du premier relevé" : "Aucun relevé récent";
+                WhiteLabel(new Rect(plot.x + 10f, plot.center.y - 11f, plot.width - 20f, 22f), message, labelStyle);
+                return;
+            }
+
+            DrawSeries(plot, start, animalCeiling, grassCeiling);
         }
-
-        string speedLabel = $"×{Time.timeScale:0.##}";
-
-        if (!visible)
+        finally
         {
-            Rect badge = new Rect(Screen.width - 182f, Screen.height - 42f, 170f, 30f);
-            Fill(badge, new Color(0.08f, 0.11f, 0.13f, 0.94f));
-            GUI.Label(new Rect(badge.x + 9f, badge.y + 4f, 154f, 22f),
-                $"F2  ·  Populations     {speedLabel}", labelStyle);
-            return;
+            GUI.color = previousGuiColor;
+            GUI.contentColor = previousContentColor;
         }
-
-        float width = Mathf.Min(450f, Screen.width - 24f);
-        float height = Mathf.Min(238f, Screen.height - 24f);
-        if (width < 220f || height < 120f)
-            return;
-
-        Rect panel = new Rect(Screen.width - width - 12f, Screen.height - height - 12f, width, height);
-        Rect plot = new Rect(panel.x + 48f, panel.y + 60f, panel.width - 96f, panel.height - 88f);
-        Fill(panel, new Color(0.08f, 0.11f, 0.13f, 0.96f));
-        GUI.Label(new Rect(panel.x + 14f, panel.y + 8f, 155f, 24f), $"Populations  ·  {speedLabel}", titleStyle);
-        GUI.Label(new Rect(panel.xMax - 96f, panel.y + 10f, 85f, 22f), "F2  ·  Masquer", axisStyle);
-
-        double now = Time.timeAsDouble;
-        double start = now - windowSeconds;
-        bool hasData = samples.Count > 0 && samples[samples.Count - 1].Time >= start;
-        Sample latest = hasData ? samples[samples.Count - 1] : default;
-        DrawLegend(panel, hasData, latest);
-
-        (long animalCeiling, long grassCeiling) = hasData ? GetAxisCeilings() : (4L, 4L);
-        DrawGrid(plot, animalCeiling, grassCeiling, hasData);
-
-        if (!hasData)
-        {
-            string message = samples.Count == 0 ? "En attente du premier relevé" : "Aucun relevé récent";
-            GUI.Label(new Rect(plot.x + 10f, plot.center.y - 11f, plot.width - 20f, 22f), message, labelStyle);
-            return;
-        }
-
-        DrawSeries(plot, start, animalCeiling, grassCeiling);
     }
 
     private void DrawLegend(Rect panel, bool hasData, Sample latest)
@@ -136,7 +188,7 @@ public class PopulationPlot : MonoBehaviour
     {
         Fill(new Rect(x, y + 7f, 6f, 6f), color);
         string value = hasData ? count.ToString() : "–";
-        GUI.Label(new Rect(x + 9f, y, width - 9f, 21f), $"{name} {value}", labelStyle);
+        WhiteLabel(new Rect(x + 9f, y, width - 9f, 21f), $"{name} {value}", labelStyle);
     }
 
     private (long animals, long grass) GetAxisCeilings()
@@ -164,16 +216,16 @@ public class PopulationPlot : MonoBehaviour
             Fill(new Rect(plot.x, y, plot.width, 1f), gridColor);
             if (hasData)
             {
-                GUI.Label(new Rect(plot.x - 42f, y - 9f, 39f, 18f),
+                WhiteLabel(new Rect(plot.x - 42f, y - 9f, 39f, 18f),
                     (animalCeiling / 4 * tick).ToString(), axisStyle);
-                GUI.Label(new Rect(plot.xMax + 5f, y - 9f, 39f, 18f),
+                WhiteLabel(new Rect(plot.xMax + 5f, y - 9f, 39f, 18f),
                     (grassCeiling / 4 * tick).ToString(), grassAxisStyle);
             }
         }
 
-        GUI.Label(new Rect(plot.x, plot.yMax + 4f, 68f, 19f), $"−{windowSeconds:0.#} s", axisStyle);
-        GUI.Label(new Rect(plot.center.x - 25f, plot.yMax + 4f, 61f, 19f), $"−{windowSeconds / 2f:0.#} s", axisStyle);
-        GUI.Label(new Rect(plot.xMax - 22f, plot.yMax + 4f, 25f, 19f), "0 s", axisStyle);
+        WhiteLabel(new Rect(plot.x, plot.yMax + 4f, 68f, 19f), $"−{windowSeconds:0.#} s", axisStyle);
+        WhiteLabel(new Rect(plot.center.x - 25f, plot.yMax + 4f, 61f, 19f), $"−{windowSeconds / 2f:0.#} s", axisStyle);
+        WhiteLabel(new Rect(plot.xMax - 22f, plot.yMax + 4f, 25f, 19f), "0 s", axisStyle);
     }
 
     private void DrawSeries(Rect plot, double start, long animalCeiling, long grassCeiling)
@@ -234,8 +286,23 @@ public class PopulationPlot : MonoBehaviour
 
     private static GUIStyle MakeStyle(int size, Color color, FontStyle fontStyle = FontStyle.Normal)
     {
-        GUIStyle style = new GUIStyle(GUI.skin.label) { fontSize = size, fontStyle = fontStyle };
+        GUIStyle style = new GUIStyle(GUI.skin.label) { fontSize = size, fontStyle = fontStyle, richText = true };
         style.normal.textColor = color;
+        style.hover.textColor = color;
+        style.active.textColor = color;
+        style.focused.textColor = color;
         return style;
     }
+    // Explicit rich-text white, independent of the GUI skin's text tint.
+    private static void WhiteLabel(Rect rect, string text, GUIStyle style)
+    {
+        Color previousColor = GUI.color;
+        Color previousContentColor = GUI.contentColor;
+        GUI.color = Color.white;
+        GUI.contentColor = Color.white;
+        GUI.Label(rect, "<color=#FFFFFFFF>" + text + "</color>", style);
+        GUI.color = previousColor;
+        GUI.contentColor = previousContentColor;
+    }
+
 }
