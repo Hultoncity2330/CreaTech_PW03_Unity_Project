@@ -1,15 +1,15 @@
 using UnityEngine;
 
-public enum WolfState { Idle, Chase, Attack, Eat, Dead }
+public enum WolfState { Idle, Chase, Attack, Eat, Reproduce, Dead }
 
 
 public class WolfBehaviour : AgentBehaviour
 {
     [Header("Wolf Settings")]
-    [SerializeField] private float chaseEnergyLoss = 10f;
     [SerializeField] private float energyRecovery = 10f;
+    [SerializeField] private float chaseEnergyLoss = 10f;
     [SerializeField] private float hungerThreshold = 50f;
-
+    
     [Header("Eating")]
     [SerializeField] private float attackDuration = 1f;
     [SerializeField] private float eatDuration = 2f;
@@ -41,7 +41,8 @@ public class WolfBehaviour : AgentBehaviour
     protected override void UpdateBehaviour()
     {
         // 1. Perception and state selection (not while attacking or eating)
-        if (currentState == WolfState.Idle || currentState == WolfState.Chase)
+        if (currentState == WolfState.Idle || currentState == WolfState.Chase ||
+            currentState == WolfState.Reproduce)
         {
             closestSheep = FindClosestAgent(SimulationType.Sheep);
 
@@ -84,6 +85,10 @@ public class WolfBehaviour : AgentBehaviour
                 DoEat();
                 break;
 
+            case WolfState.Reproduce:
+                DoReproduce();
+                break;
+
             case WolfState.Dead:
                 break;
         }
@@ -97,10 +102,32 @@ public class WolfBehaviour : AgentBehaviour
     {
         currentState = WolfState.Idle;
 
+        // Hungry wolves chase first, if they have the energy to run.
         if (!IsExhausted && Hunger < hungerThreshold && closestSheep != null)
+        {
+            CancelReproduction();
             currentState = WolfState.Chase;
+        }
+        else
+        {
+            // Chasing has priority; otherwise wolves can breed from 20% hunger.
+            if (IsReproducing)
+            {
+                if (Hunger < 20f)
+                    CancelReproduction();
+            }
+            else
+                TryFindReproductionPartner();
+
+            if (IsReproducing)
+                currentState = WolfState.Reproduce;
+        }
     }
 
+    protected override bool CanStartReproduction()
+    {
+        return currentState == WolfState.Idle && MeetsReproductionNeeds();
+    }
 
     private void DoIdle()
     {
@@ -174,6 +201,7 @@ public class WolfBehaviour : AgentBehaviour
 
     protected override void OnDeath()
     {
+        CancelReproduction();
         currentState = WolfState.Dead;
 
         if (prey != null && !prey.IsDead)

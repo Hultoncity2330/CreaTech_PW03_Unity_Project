@@ -57,6 +57,11 @@ MonoBehaviour:
   maxSearchInterval: 0.6
   areaCenter: {x: 0, y: 0}
   areaHalfSize: 60
+  heartVisual: {fileID: 954638977107117259}
+  offspringPrefab: {fileID: 9015840134179744150}
+  reproductionCooldown: 180
+  reproductionDistance: 2
+  reproductionDuration: 3
   hungerLossRate: 1
   deathVisual: {fileID: 0}
   fallDuration: 0.5
@@ -177,6 +182,11 @@ PrefabInstance:
 --- !u!4 &465101922140298865 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 7f1eb2b7878744deb72bbca8d73b908a, type: 3}
+  m_PrefabInstance: {fileID: 143805978804713882}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &954638977107117259 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 7f1eb2b7878744deb72bbca8d73b908a, type: 3}
   m_PrefabInstance: {fileID: 143805978804713882}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3204503449396477586
