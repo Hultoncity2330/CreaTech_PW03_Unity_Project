@@ -697,7 +697,8 @@ For the individual discussion, **explicitly choose one extension to highlight**,
 
 ## 15. Credits
 
-- **Contributor:** **Ryan Hulton** (also identified at the very top of this README, as required for the workshop submission).
+- **Base project and course:** Paul Ecoffet (CreaTech).
+- **Contributor:** **Ryan Hulton**.
 - **Course:** Computer Science — Workshop 3, *Predator–Prey Simulation in Unity*.
 - **Engine and language:** Unity 6.6 (`6000.6.9f1`), C#.
 - **Grass Tuft model:** Vice Cooper (credited in the original project).
@@ -709,3 +710,7 @@ For the individual discussion, **explicitly choose one extension to highlight**,
 **Quick start:** Unity Hub → Add project from disk → select the directory containing `Assets`, `Packages`, and `ProjectSettings` → open using Unity `6000.6.9f1` → `Assets/Scenes/SampleScene.unity` → **▶ Play** → **Game** tab → click inside Game → move with **WASD/ZQSD or arrow keys + mouse**.
 
 **Essential shortcuts:** **F1** help · **F2** population graph · **Tab** animal panels · **1/2/3/4** simulation ×1/×2/×4/×8 · **Esc** release cursor.
+
+---
+
+**Base project and course:** Paul Ecoffet (CreaTech).
